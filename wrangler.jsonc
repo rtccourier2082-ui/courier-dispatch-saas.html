@@ -1,0 +1,18 @@
+{
+  // The name must stay exactly like this (it is the name of your Worker in Cloudflare).
+  "name": "courier-dispatch-saas-html",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+
+  // The web page (your app) lives in the "public" folder.
+  "assets": { "directory": "./public" },
+
+  // The database. Replace PASTE-YOUR-DATABASE-ID-HERE with the Database ID you copy from Cloudflare (see START-HERE.txt, step 2).
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "courier-db",
+      "database_id": "PASTE-YOUR-DATABASE-ID-HERE"
+    }
+  ]
+}

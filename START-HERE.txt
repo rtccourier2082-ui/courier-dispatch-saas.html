@@ -1,0 +1,107 @@
+START HERE — put your courier app on Cloudflare with a real database
+=====================================================================
+
+WHAT YOU GET
+  Before: the app saved everything inside one browser, so a rider's phone and your office
+          computer could never see the same data.
+  Now:    the app saves to a Cloudflare database (called D1). Every phone and computer that
+          opens your website sees the same shipments, riders, invoices and live rider locations.
+
+HOW IT WORKS (in simple words)
+  - public/index.html   = your app (the web page).
+  - src/worker.js       = a tiny "waiter" on Cloudflare. The app asks it to save and fetch data.
+  - D1 database         = the "filing cabinet" where the waiter stores everything.
+  - schema.sql          = a plain description of the cabinet's drawers. The waiter creates them
+                          by itself the first time, so you do NOT have to run it.
+  - APP_KEY             = a secret access code. Without it nobody can read or change your data.
+
+YOU WILL DO 6 SMALL STEPS. Nothing needs the command line. Takes about 15 minutes.
+
+-----------------------------------------------------------------------
+STEP 1 — Create the database  (you are already on this page)
+-----------------------------------------------------------------------
+  1. In Cloudflare, left menu: Storage & databases (or Build) > D1 SQLite Database.
+  2. Click the blue "Create Database" button.
+  3. Name:  courier-db      (use exactly this name)
+  4. Leave the location on "Automatic", then click Create.
+  5. You land on the new database's page. Find the line "Database ID"
+     (a long code like  1a2b3c4d-1111-2222-3333-444455556666).  Click the copy icon next to it.
+     Keep it — you need it in step 2.
+
+-----------------------------------------------------------------------
+STEP 2 — Put that ID into the file wrangler.jsonc
+-----------------------------------------------------------------------
+  Option A (easiest, in GitHub after step 3):
+    open wrangler.jsonc in your GitHub repository > click the pencil icon (Edit) >
+    replace  PASTE-YOUR-DATABASE-ID-HERE  with the ID you copied >
+    click "Commit changes".
+  Option B: edit it on your computer with Notepad before uploading in step 3.
+  Keep the quotation marks. Example:   "database_id": "1a2b3c4d-1111-2222-3333-444455556666"
+
+-----------------------------------------------------------------------
+STEP 3 — Upload the files to your GitHub repository
+-----------------------------------------------------------------------
+  1. Unzip the file you downloaded.
+  2. Open your GitHub repository (the one Cloudflare is connected to).
+  3. Click "Add file" > "Upload files".
+  4. Drag these into the page:   the "public" folder, the "src" folder, wrangler.jsonc, schema.sql
+     (drag the folders themselves, not only what is inside).
+  5. Click "Commit changes".
+  The old file courier-dispatch-saas.html in the repository can stay; it is simply not used.
+
+-----------------------------------------------------------------------
+STEP 4 — Fix the Cloudflare build settings
+-----------------------------------------------------------------------
+  1. Workers & Pages > your project (courier-dispatch-saas-html) > Settings > Build.
+  2. Build command:   leave EMPTY (delete anything there).
+  3. Deploy command:  npx wrangler deploy
+  4. Save. Then open Deployments and click "Retry build" (or just wait: step 3 starts a build).
+  When the build turns green, your site is live.
+
+-----------------------------------------------------------------------
+STEP 5 — Set your secret access code (APP_KEY)
+-----------------------------------------------------------------------
+  1. Workers & Pages > your project > Settings > Variables and secrets > Add.
+  2. Type: Secret      Name: APP_KEY      Value: a code you invent (long is better,
+     e.g. a sentence like  RtcCourier-Butwal-2082-secret). Write it down!
+  3. Click Deploy (Save and deploy).
+
+-----------------------------------------------------------------------
+STEP 6 — Open your website and sign in with the code
+-----------------------------------------------------------------------
+  1. Open your site (the link under Settings > Domains & Routes, ending in workers.dev).
+  2. A box asks for the access code. Type your APP_KEY. This is asked once per phone/computer.
+  3. Log in as always. Bottom-right you will see "☁ Saved to cloud".
+  Give riders, branches and vendors the website link AND the access code.
+
+CHECK IT WORKS
+  Open the website on two devices (for example your computer and your phone). Change something
+  on one — the other shows it within about 5 seconds.
+  To look at the data itself: Cloudflare > D1 SQLite Database > courier-db > Tables > parts.
+
+-----------------------------------------------------------------------
+IF SOMETHING GOES WRONG
+-----------------------------------------------------------------------
+  "One setup step is missing" on the website   -> do step 5 (APP_KEY), then reload.
+  "The cloud database is not ready"            -> the database is not connected: check that the
+                                                  Database ID in wrangler.jsonc is correct, and the
+                                                  name is courier-db. Then retry the build.
+  Build fails: "database_id" / "Invalid"       -> the ID in wrangler.jsonc is still the placeholder
+                                                  text or has a typo.
+  Build fails: "Could not detect a directory"  -> the "public" folder was not uploaded to GitHub.
+  Build fails: name does not match             -> keep  "name": "courier-dispatch-saas-html".
+  Wrong access code box keeps appearing        -> the code must match APP_KEY exactly (capitals count).
+  The badge says "No connection"               -> no internet. Keep working: it uploads later by itself.
+
+GOOD TO KNOW (honest limits)
+  - The access code is one shared password for your team. Anyone who has it can open the data.
+    Fine for your own team and for testing. Before you sell this to outside customers you need
+    proper per-user logins on the server (ask me and I will build that next).
+  - Two people creating the same type of record (two shipments) in the very same 5 seconds on
+    different devices is the one risky moment. For a small team this is very rare.
+  - Rider location is sent every ~8 seconds to save your free quota. Riders' phones need the
+    website opened over https (it is, on workers.dev) and location allowed.
+  - Free plan limits (per day): 100,000 database writes and 5 million reads, 100,000 requests.
+    A few users are fine. If you grow, Cloudflare's paid plan is about $5 per month.
+  - Your old data: it stays in each browser. The first device that opens the new website uploads
+    its data to the cloud (including the sample data), and other devices then receive it.
